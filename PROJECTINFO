@@ -1,0 +1,23 @@
+1: SVG image: omage with code 
+svg:  <svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 350">
+    <style>.base { fill: white; font-family: serif; font-size: 14px; }</style>
+    <rect width="100%" height="100%" fill="black" />
+    <text x="50%" y="50%" class="base" dominant-baseline="middle" text-anchor="middle">EpicLordHamburger</text>
+</svg>
+    ////// show coded image here : https://www.svgviewer.dev/
+    
+2: convert into Base64 encoded SVG :   https://www.utilities-online.info/base64?utm_source=buildspace.so&utm_medium=buildspace_project
+
+3: image:   data:image/svg+xml;base64,INSERT_YOUR_BASE64_ENCODED_SVG_HERE
+
+4: creat Json with base64 using point 2 
+
+5: json:  data:application/json;base64,INSERT_YOUR_BASE64_ENCODED_JSON_HERE
+
+
+
+CAN SEE SVG IMAGE HERE : https://www.svgviewer.dev/?utm_source=buildspace.so&utm_medium=buildspace_project
+
+#After deploying on Testnet 
+To show on opensea: https://testnets.opensea.io/
+To show on rarible: https://rinkeby.rarible.com/token/INSERT_DEPLOY_CONTRACT_ADDRESS_HERE:INSERT_TOKEN_ID_HERE
