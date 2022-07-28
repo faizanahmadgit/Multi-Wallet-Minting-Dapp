@@ -2,6 +2,11 @@ import './styles/App.css';
 import linkedinLogo from './assets/linkedin-logo.svg';
 import React, { useEffect, useState } from "react";
 import {ethers} from "ethers";
+import Web3Modal from "web3modal";
+import WalletConnectProvider from "@walletconnect/web3-provider";
+import CoinBase from "@coinbase/wallet-sdk";
+import { InjectedConnector } from "@web3-react/injected-connector";
+
 
 import abi from "./utils/MyEpicNFT.json";
 
@@ -11,13 +16,50 @@ const LINNKEDIN_LINK = `https://www.linkedin.com/in/${LINNKEDIN_HANDLE}`;
 const OPENSEA_LINK = '';
 const TOTAL_MINT_COUNT = 50;
 
-const CONTRACT_ADDRESS = "0x80829301072efd18ACeC33122afEe74842c13fa2"
+const CONTRACT_ADDRESS = "0x80829301072efd18ACeC33122afEe74842c13fa2";
+//Web3Modal
+const providerOptions = {
+  // InjectedConnector:{
+  //   supportedChainIds: [1, 3, 4, 5, 42]  //Not working
+  // },
+  walletconnect: {
+    package: WalletConnectProvider, // required
+    options: {
+      infuraId: "BKsAeeC-F7GB6KBzySe_p5aOCRQ1ZH9" // required
+    }
+  },
+  binancechainwallet: {
+    package: true
+  },
+  coinbasewallet: {
+    package: CoinBase, // Required
+    options: {
+      appName: "My Epic NFT", // Required
+      infuraId: "BKsAeeC-F7GB6KBzySe_p5aOCRQ1ZH9l", // Required
+      rpc: "", // Optional if `infuraId` is provided; otherwise it's required
+      chainId: 4, // Optional. It defaults to 1 if not provided
+      darkMode: false // Optional. Use dark theme, defaults to false
+    }
+  }
+
+};
+const web3modal =new Web3Modal({
+  network: "rinkeby", // optional
+  cacheProvider: true, // optional
+  disableInjectedProvider: false, //Optional! if true, it will remove metamask from options
+  providerOptions // required, from above
+});
+
 
 const App = () => {
             /*
             * Just a state variable we use to store our user's public wallet. Don't forget to import useState.
             */
           const [currentAccount, setCurrentAccount] =useState("");
+          const [provider, setProvider] = useState();
+          const [library, setLibrary] = useState();
+          const [chainId, setChainId] = useState();
+
 
         const CheckIfWalletIsConnected = async() => {
             const { ethereum } = window;
@@ -48,10 +90,14 @@ const App = () => {
 
             const { ethereum } = window;
 
-            if(!ethereum) {
-              alert("Get Metamask!");
-              return;
-            }
+            // if(!ethereum) {
+            //   alert("Get Metamask!");
+            //   return;
+            // }
+            const provider = await web3modal.connect();
+            const library = new ethers.providers.Web3Provider(provider);
+            setProvider(provider);
+            setLibrary(library);
 
             const accounts = await ethereum.request({ method: "eth_requestAccounts" });
             console.log("Connected ", accounts[0]);
@@ -72,10 +118,11 @@ const setupEventListener = async () => {
   try {
     const { ethereum } = window;
 
-    if (ethereum) {
       // Same stuff again
-      const provider = new ethers.providers.Web3Provider(ethereum);
-      const signer = provider.getSigner();
+      const provider = await web3modal.connect();
+      const library = new ethers.providers.Web3Provider(provider);
+      const signer   = library.getSigner();
+      
       const connectedContract = new ethers.Contract(CONTRACT_ADDRESS, abi.abi, signer);
 
       // THIS IS THE MAGIC SAUCE.
@@ -88,9 +135,7 @@ const setupEventListener = async () => {
 
       console.log("Setup event listener!")
 
-    } else {
-      console.log("Ethereum object doesn't exist!");
-    }
+    
   } catch (error) {
     console.log(error)
   }
@@ -103,9 +148,10 @@ const setupEventListener = async () => {
         const askContractToMintNft = async() =>{
           try{
             const { ethereum } = window;
-            if(ethereum){
-              const provider = new ethers.providers.Web3Provider(ethereum);
-              const signer   = provider.getSigner();
+            //web3Modal
+            const provider = await web3modal.connect();
+              const library = new ethers.providers.Web3Provider(provider);
+              const signer   = library.getSigner();
               //connection with contract
               const connectedContract = new ethers.Contract(CONTRACT_ADDRESS, abi.abi, signer);
 
@@ -115,19 +161,67 @@ const setupEventListener = async () => {
               await nftTxn.wait();
               console.log(nftTxn);
               console.log(`Mined, see transaction: https://rinkeby.etherscan.io/tx/${nftTxn.hash}`);
-            }
-            else {
-              console.log("Ethereum object doesn't exist!");
-            }
+            
+            
           } catch(error){
             console.log(error)
           }
         }
+
+        //Remove Wallet
+        const refreshState = () => {
+          setCurrentAccount();
+          setChainId();
+          //setNetwork("");
+          setProvider();
+          //setSignature("");
+          //setVerified(undefined);
+        };
+      
+        const disconnect = async () => {
+          await web3modal.clearCachedProvider();
+          refreshState();
+        };
   
 
-        useEffect(()=>{
-          CheckIfWalletIsConnected();
-        },[])
+        // useEffect(()=>{
+        //   CheckIfWalletIsConnected();
+        // },[])
+
+        // useEffect(() => {
+        //   if (web3modal.cachedProvider) {
+        //     connectWallet();
+        //   }
+        // }, []);
+        useEffect(() => {
+          if (provider?.on) {
+            const handleAccountsChanged = (accounts) => {
+              console.log("accountsChanged", accounts);
+              if (accounts) setCurrentAccount(accounts[0]);
+            };
+      
+            const handleChainChanged = (_hexChainId) => {
+              setChainId(_hexChainId);
+            };
+      
+            const handleDisconnect = () => {
+              console.log("disconnect");
+              disconnect();
+            };
+      
+            provider.on("accountsChanged", handleAccountsChanged);
+            provider.on("chainChanged", handleChainChanged);
+            provider.on("disconnect", handleDisconnect);
+      
+            return () => {
+              if (provider.removeListener) {
+                provider.removeListener("accountsChanged", handleAccountsChanged);
+                provider.removeListener("chainChanged", handleChainChanged);
+                provider.removeListener("disconnect", handleDisconnect);
+              }
+            };
+          }
+        }, [provider]);
 
 
   // Render Methods
@@ -152,7 +246,8 @@ const setupEventListener = async () => {
             Each unique. Each beautiful. Discover your NFT today.
           </p>
           {currentAccount === "" ? renderNotConnectedContainer() : renderMintUI()}
-        </div>
+        </div>,
+               <button onClick={disconnect}>Disconnect</button>
         <div className="footer-container">
           <img alt="Twitter Logo" className="twitter-logo" src={linkedinLogo} />
           <a

@@ -21,3 +21,11 @@ CAN SEE SVG IMAGE HERE : https://www.svgviewer.dev/?utm_source=buildspace.so&utm
 #After deploying on Testnet 
 To show on opensea: https://testnets.opensea.io/
 To show on rarible: https://rinkeby.rarible.com/token/INSERT_DEPLOY_CONTRACT_ADDRESS_HERE:INSERT_TOKEN_ID_HERE
+
+
+#Web3Modal
+1: npm install --save web3modal
+2: for WalletConnect        => npm install --save @walletconnect/web3-provider
+3: for BinanceChain wallet  => no need to install anything
+4: for coinbase(WalletLink) => npm install --save @coinbase/wallet-sdk
+import everything in App.js => const providerOptions => 
